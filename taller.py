@@ -1,5 +1,9 @@
 import numpy as np
 import os
+import plotly.graph_objs as go
+import plotly.io as pio
+from PIL import Image
+import io
 
 entradas = [[1, 1, 0], [1, 0, 0], [0, 1, 1], [0, 0, 1]]
 salidas = [[1, 1], [1, 0], [0, 1], [0, 0]]
@@ -22,6 +26,7 @@ rata_aprendizaje = 0.1
 print(pesos, "pesos sin entrenar")
 print(umbrales, "umbrales sin entrenar")
 # iteramos segun las iteraciones definidas
+errores_iteracion = []
 for iteration in range(iterations):
     # iteramos cada patron de la matriz
     errores_permitidos = 0
@@ -59,8 +64,20 @@ for iteration in range(iterations):
             error_permitido += error
         #sumamos los errores permitidos por cada patron de la iteracion
         errores_permitidos += (abs(error_permitido) / total_salidas)
+        
     #validamos el si el error permitido es menor al error maximo para ver si concluimos el entrenamiento.
-    if (errores_permitidos <= error_maximo_permitido):
+    error_iteracion = (errores_permitidos / total_patrones)
+    errores_iteracion.append(error_iteracion)
+    if (error_iteracion <= error_maximo_permitido):
+
+        x_grafic = list(range(1, len(errores_iteracion)+1))
+        fig = go.Figure(data=[go.Scatter(x=x_grafic, y=errores_iteracion)])
+        # Renderizar el gráfico en una imagen
+        img_bytes = pio.to_image(fig, format='png')
+        # Mostrar la imagen en una ventana de Python
+        img = Image.open(io.BytesIO(img_bytes))
+        img.show()
+        #sns.scatterplot(x=x_grafic, y=errores_iteracion)
         print("Error maximo alcanzado, Iteraciones:", (iteration + 1))
         break
 
@@ -80,6 +97,6 @@ print(pesos, "pesos entrenados")
 print(umbrales, "umbrales entrenados")
             
 
-
-                
+#pip install -U kaleido
+#pip install PyQt5              
 
