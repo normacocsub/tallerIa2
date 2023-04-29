@@ -52,4 +52,26 @@ QLineEdit {
     font-size: 14px
 }
 
+QPushButton {
+    background-color: red; 
+    border: 1px solid black; 
+    color: white; 
+    min-width: 150px; 
+    border-radius: 5px; 
+    min-height: 40px; 
+    font-size: 18px; 
+    font-weight: bold;
+}
+QPushButton:hover {
+    background-color: #2f80ed;
+}
+
+QPushButton:pressed {
+    background-color: #0d47a1;
+}
+
+QPushButton:disabled  {
+    background-color: #ccc;
+}
+
 
