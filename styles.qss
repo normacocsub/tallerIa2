@@ -1,0 +1,55 @@
+
+QComboBox QAbstractItemView {
+    background-color: gray;
+    border: 1px solid gray;
+    selection-background-color: blue;
+    
+}
+
+QComboBox QAbstractItemView::item {
+    
+    padding: 2px 10px;
+}
+
+QComboBox QAbstractItemView::item:selected {
+    background-color: blue;
+    color: white;
+}
+
+QComboBox::drop-down {
+    subcontrol-origin: padding;
+    subcontrol-position: top right;
+    width: 15px;
+    border-top-right-radius: 5px;
+    border-bottom-right-radius: 5px;
+    background-color: white;
+}
+
+QComboBox { 
+    color: black; 
+    background-color: white;
+    min-height: 30px; 
+    min-width: 100px; 
+    padding-left: 20px; 
+    border-radius: 6px; 
+    border: 2px solid black; 
+    font-size: 14px
+    
+}
+QLabel {
+    font-size: 15px;
+    font-weight: bold;
+}
+
+QLineEdit {
+    color: black; 
+    background-color: white;
+    min-height: 30px; 
+    min-width: 100px; 
+    padding-left: 20px; 
+    border-radius: 6px; 
+    border: 2px solid black; 
+    font-size: 14px
+}
+
+
