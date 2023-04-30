@@ -33,14 +33,20 @@ class Window(QMainWindow):
     def initUI(self):
         
         self.setGeometry(0, 220, 800, 950)
-        self.setFixedSize(800, 950)
+        self.setFixedSize(800, 900) #self.setFixedSize(800, 950)
         self.setWindowTitle('Entrenamiento red neuronal')
-        self.error_iteration = [1, 3, 2]
+        self.error_iteration = []
+        self.pesos = []
+        self.umbrales = []
         self.total_patrones = 0
         self.total_entradas = 0
         self.total_salidas = 0
         self.matriz_entradas = []
         self.matriz_salidas = []
+        self.iterations = 100
+        self.max_error = 0.01
+        self.rata_aprendizaje = 0.1
+        self.tipo_red = "Perceptron"
         
 
 
@@ -63,18 +69,21 @@ class Window(QMainWindow):
 
         button_red = QPushButton('Iniciar red', self)
         button_red.setToolTip('This is a button')
-        button_red.move(550, 895)
+        button_red.move(550, 855)
+        button_red.setEnabled(False)
+        button_red.clicked.connect(self.iniciar_red)
         self.button_iniciar_red = button_red
 
         button_entrenar = QPushButton('Entrenar', self)
         button_entrenar.setToolTip('This is a button')
-        button_entrenar.move(350, 895)
+        button_entrenar.move(350, 855)
         button_entrenar.setEnabled(False)
+        button_entrenar.clicked.connect(self.entrenar_red)
         self.button_entrenar = button_entrenar
 
         button_simular = QPushButton('Simular', self)
         button_simular.setToolTip('This is a button')
-        button_simular.move(150, 895)
+        button_simular.move(150, 855)
         button_simular.setEnabled(False)
         self.button_simular = button_simular
 
@@ -119,7 +128,8 @@ class Window(QMainWindow):
         combo_box = QComboBox()
         combo_box.addItem("Perceptron")
         combo_box.addItem("Adaline")
-
+        combo_box.currentIndexChanged.connect(self.dropbox_change_tipo_red)
+        self.combo_tipo_red = combo_box
         hbox.addWidget(combo_box)
 
         # Agregar el layout horizontal al layout vertical
@@ -127,6 +137,18 @@ class Window(QMainWindow):
 
         central_widget.setLayout(vbox)
         central_widget.setGeometry(80, 200, 250, 200)
+    
+
+    def disable_buttons_train_and_simulate(self):
+        #if not self.button_entrenar or not self.button_simular:
+        #    return
+        #self.button_entrenar.setEnabled(False)
+        #self.button_simular.setEnabled(False)
+        a=""
+
+    def dropbox_change_tipo_red(self, index):
+        self.tipo_red = self.combo_tipo_red.itemText(index)
+        self.disable_buttons_train_and_simulate()
     
     def textbox_iterations(self):
         widget = QWidget(self)
@@ -141,11 +163,17 @@ class Window(QMainWindow):
         hbox.addWidget(label)
 
         text_box = QLineEdit()
+        text_box.textChanged.connect(self.textbox_change_iterations)
         text_box.setValidator(PositiveDoubleValidator())
+        text_box.setText("100")
         hbox.addWidget(text_box)
         vbox.addLayout(hbox)
         widget.setLayout(vbox)
         widget.setGeometry(420, 200, 250, 200)
+    
+    def textbox_change_iterations(self, text):
+        self.iterations = int(text)
+        self.disable_buttons_train_and_simulate()
 
     def texbox_max_error(self):
         widget = QWidget(self)
@@ -160,11 +188,17 @@ class Window(QMainWindow):
         hbox.addWidget(label)
 
         text_box = QLineEdit()
+        text_box.textChanged.connect(self.textbox_change_max_error)
         text_box.setValidator(PositiveDoubleValidator())
+        text_box.setText("0.01")
         hbox.addWidget(text_box)
         vbox.addLayout(hbox)
         widget.setLayout(vbox)
         widget.setGeometry(65, 300, 265, 200)
+    
+    def textbox_change_max_error(self, text):
+        self.max_error = float(text)
+        self.disable_buttons_train_and_simulate()
     
     def texbox_rata_aprendizaje(self):
         widget = QWidget(self)
@@ -179,11 +213,17 @@ class Window(QMainWindow):
         hbox.addWidget(label)
 
         text_box = QLineEdit()
+        text_box.textChanged.connect(self.texbox_change_rata_aprendizaje)
         text_box.setValidator(PositiveDoubleValidator())
+        text_box.setText("0.1")
         hbox.addWidget(text_box)
         vbox.addLayout(hbox)
         widget.setLayout(vbox)
         widget.setGeometry(383, 300, 285, 200)
+
+    def texbox_change_rata_aprendizaje(self, text):
+        self.rata_aprendizaje = float(text)
+        self.disable_buttons_train_and_simulate()
        
     def grafica_entrenamiento(self):
         ruta_figura = os.path.abspath("temp-plot.html")
@@ -200,7 +240,7 @@ class Window(QMainWindow):
         main_layout = QVBoxLayout(main_widget)
         main_layout.addWidget(graph_widget)
         main_widget.setLayout(main_layout)
-        main_widget.setGeometry(120, 510, 565, 340)
+        main_widget.setGeometry(120, 470, 565, 340)
 
         
         with open(ruta_figura, 'w', encoding='utf-8') as f:
@@ -210,8 +250,8 @@ class Window(QMainWindow):
         graph_widget.load(QUrl.fromLocalFile(ruta_figura))
         self.graph_widget = graph_widget
 
-    def update_grafica_entrenamiento(self):
-        fig = go.Figure(data=[go.Scatter(x=['A', 'B', 'C'], y=self.error_iteration)])
+    def update_grafica_entrenamiento(self, iterations):
+        fig = go.Figure(data=[go.Scatter(x=iterations, y=self.error_iteration)])
         fig_html = pio.to_html(fig, full_html=False)
 
         # Guardar HTML en archivo temporal
@@ -229,9 +269,58 @@ class Window(QMainWindow):
         line.setFrameShape(QFrame.HLine)
         line.setFrameShadow(QFrame.Sunken)  # Establecer la forma de la línea como horizontal
         vbox.addWidget(line)
-        widget.setGeometry(0, 120 if val == 1 else 400, 800, 205)
-        
+        widget.setGeometry(0, 120 if val == 1 else 350, 800, 205)
 
+
+    def iniciar_red(self):
+        self.button_entrenar.setEnabled(True)
+    
+
+    def entrenar_red(self):
+        self.error_iteration = []
+        for iteration in range(self.iterations):
+            errores_permitidos = 0
+            #iteramos cada patron
+            for patron in range(self.total_patrones):
+                salidas_neuronas = []
+                errores = []
+                error_permitido = 0
+                #iteracion de las salidas
+                for i in range(self.total_salidas):
+                    suma_entrada_pesos = 0
+                    for j in range(self.total_entradas):
+                        suma_entrada_pesos += ((self.matriz_entradas[patron][j] * self.pesos[j][i]))
+                    salida_neurona = suma_entrada_pesos - self.umbrales[i]
+                    #decidimos si usaremos perceptron o adaline
+                    if self.tipo_red == "Perceptron":
+                        if salida_neurona > 0:
+                            salida_neurona = 1
+                        else:
+                            salida_neurona = 0
+                    salidas_neuronas.append(salida_neurona)
+                    #calculamos el error 
+                    error = self.matriz_salidas[patron][i] - salidas_neuronas[i]
+                    errores.append(error)
+                    #iteramos nuevamente las entradas para ajustar los pesos
+                    for j in range(self.total_entradas):
+                        self.pesos[j][i] = self.pesos[j][i] + (self.rata_aprendizaje * error * self.matriz_entradas[patron][j])
+                    #ajustamos los umbrales
+                    self.umbrales[i] = self.umbrales[i] + (self.rata_aprendizaje * error * self.matriz_salidas[patron][i])
+                    #calculamos el error permitido
+                    error_permitido += error
+                #sumamos los errores permitidos por cada patron de la iteracion
+                errores_permitidos += (abs(error_permitido) / self.total_salidas)
+            #validamos el si el error permitido es menor al error maximo para ver si concluimos el entrenamiento.
+            error_iteracion = (errores_permitidos / self.total_patrones)
+            self.error_iteration.append(error_iteracion)
+            x_grafic = list(range(1, len(self.error_iteration)+1))
+            self.update_grafica_entrenamiento(x_grafic)
+            if (error_iteracion <= self.max_error):
+                #guardamos los umbrales y pesos en una matriz       
+                np.savetxt("pesos.txt", self.pesos)
+                np.savetxt("umbrales.txt", self.umbrales)
+                self.button_simular.setEnabled(True)
+                break
     def on_button_file_click(self):
         filename, _ = QFileDialog.getOpenFileName(None, "Seleccionar archivo", ".", "Archivos TXT (*.txt);;Archivos CSV (*.csv)")
         if filename:
@@ -266,15 +355,15 @@ class Window(QMainWindow):
             self.matriz_entradas = matrix_entrada_np
             self.matriz_salidas= matrix_salida_np
 
+            self.pesos = np.random.uniform(-1, 1, size=(entradas_total, salidas_total))
+            self.umbrales = np.random.uniform(-1, 1, size=(salidas_total))
+
             #actualizamos labels
             self.group_box_layout.itemAt(0).widget().setText(f"Patrones: {num_filas}")
             self.group_box_layout.itemAt(1).widget().setText(f"Entradas: {entradas_total}")
             self.group_box_layout.itemAt(2).widget().setText(f"Salidas: {salidas_total}")
-
-            #prueba actualizando grafica / se debe remover proximente
-            self.error_iteration = [2,3,8]
-            self.update_grafica_entrenamiento()
-            self.graph_widget.reload()
+            self.button_iniciar_red.setEnabled(True)
+            
 
 
 if __name__ == '__main__':
