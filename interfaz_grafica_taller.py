@@ -1,12 +1,13 @@
 import sys
 from PyQt5.QtGui import QDoubleValidator
-from PyQt5.QtWidgets import QApplication, QMainWindow, QPushButton, QLineEdit, QFileDialog, QVBoxLayout, QHBoxLayout, QLabel, QGroupBox, QWidget, QFrame, QComboBox
+from PyQt5.QtWidgets import QApplication, QStackedWidget, QMainWindow, QPushButton, QLineEdit, QFileDialog, QVBoxLayout, QHBoxLayout, QLabel, QGroupBox, QWidget, QFrame, QComboBox
 import plotly.graph_objs as go
 import plotly.io as pio
 import os
 from PyQt5.QtWebEngineWidgets import QWebEngineView, QWebEngineProfile
-from PyQt5.QtCore import QUrl
+from PyQt5.QtCore import QUrl, pyqtSignal, QObject
 import numpy as np
+from simulation import Simulation
 
 class PositiveDoubleValidator(QDoubleValidator):
     def validate(self, input_str, pos):
@@ -23,17 +24,24 @@ class PositiveDoubleValidator(QDoubleValidator):
         except:
             return QDoubleValidator.Invalid, input_str, pos
 
+class Comunicacion(QObject):
+    salidas_actualizada = pyqtSignal(list)
 
 class Window(QMainWindow):
-    def __init__(self):
+    
+    def __init__(self, ventana_principal):
         super().__init__()
+        
+        self.salidas_signal = pyqtSignal(list)
+        self.ventana_principal = ventana_principal
+        self.comunicacion = Comunicacion()
+        self.comunicacion.salidas_actualizada.connect(self.ventana_principal.vista_secundaria.actualizar_salidas)
         
         self.initUI()
         
     def initUI(self):
-        
-        self.setGeometry(0, 220, 800, 950)
-        self.setFixedSize(800, 900) #self.setFixedSize(800, 950)
+        #self.setGeometry(0, 220, 800, 950)
+        #self.setFixedSize(800, 900) #self.setFixedSize(800, 950)
         self.setWindowTitle('Entrenamiento red neuronal')
         self.error_iteration = []
         self.pesos = []
@@ -69,25 +77,24 @@ class Window(QMainWindow):
 
         button_red = QPushButton('Iniciar red', self)
         button_red.setToolTip('This is a button')
-        button_red.move(550, 855)
+        button_red.move(550, 835)
         button_red.setEnabled(False)
         button_red.clicked.connect(self.iniciar_red)
         self.button_iniciar_red = button_red
 
         button_entrenar = QPushButton('Entrenar', self)
         button_entrenar.setToolTip('This is a button')
-        button_entrenar.move(350, 855)
+        button_entrenar.move(350, 835)
         button_entrenar.setEnabled(False)
         button_entrenar.clicked.connect(self.entrenar_red)
         self.button_entrenar = button_entrenar
 
         button_simular = QPushButton('Simular', self)
         button_simular.setToolTip('This is a button')
-        button_simular.move(150, 855)
+        button_simular.move(150, 835)
         button_simular.setEnabled(False)
+        button_simular.clicked.connect(self.redirigir_simulation)
         self.button_simular = button_simular
-
-        self.show()
 
     def file_information(self):
         # Crear un widget contenedor
@@ -274,6 +281,10 @@ class Window(QMainWindow):
 
     def iniciar_red(self):
         self.button_entrenar.setEnabled(True)
+
+    def redirigir_simulation(self):
+        self.ventana_principal.stacked_widget.setCurrentIndex(1)
+
     
 
     def entrenar_red(self):
@@ -319,6 +330,10 @@ class Window(QMainWindow):
                 #guardamos los umbrales y pesos en una matriz       
                 np.savetxt("pesos.txt", self.pesos)
                 np.savetxt("umbrales.txt", self.umbrales)
+
+                self.salidas_matriz_signal = self.matriz_salidas
+                # Emitir la señal pesos_actualizados con los nuevos pesos
+                self.comunicacion.salidas_actualizada.emit(self.salidas_matriz_signal.tolist())
                 self.button_simular.setEnabled(True)
                 break
     def on_button_file_click(self):
@@ -364,6 +379,33 @@ class Window(QMainWindow):
             self.group_box_layout.itemAt(2).widget().setText(f"Salidas: {salidas_total}")
             self.button_iniciar_red.setEnabled(True)
             
+class VentanaPrincipal(QWidget):
+    def __init__(self):
+        super().__init__()
+        self.setGeometry(0, 220, 800, 950)
+        self.setFixedSize(800, 900)
+
+        
+
+        # Crear un objeto QStackedWidget para contener las vistas
+        self.stacked_widget = QStackedWidget()
+
+        # Instanciar la vista principal
+        self.vista_secundaria = Simulation(self)
+        self.vista_principal = Window(self)
+        
+
+        # Agregar la vista principal al QStackedWidget
+        self.stacked_widget.addWidget(self.vista_principal)
+        self.stacked_widget.addWidget(self.vista_secundaria)
+
+
+        
+        # Establecer el QStackedWidget como el diseño de la ventana principal
+        layout = QHBoxLayout()
+        layout.addWidget(self.stacked_widget)
+        self.setLayout(layout)
+        self.show()
 
 
 if __name__ == '__main__':
@@ -372,7 +414,9 @@ if __name__ == '__main__':
     with open('styles.qss', 'r') as f:
         stylesheet = f.read()
         app.setStyleSheet(stylesheet)
-    window = Window()
+    window = VentanaPrincipal()
+    print("Ventana creada")
+    print(window.size())
     sys.exit(app.exec_())
 
 
