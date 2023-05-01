@@ -74,4 +74,33 @@ QPushButton:disabled  {
     background-color: #ccc;
 }
 
+QTableWidget {
+    border: 1px solid gray;
+    border-radius: 3px;
+    padding: 1px;
+    selection-background-color: darkgray;
+}
+
+QTableWidget QHeaderView::section {
+    background-color: lightgray;
+    border: 1px solid gray;
+    border-radius: 3px;
+    font-weight: bold;
+    padding: 2px;
+}
+
+QTableWidget QHeaderView::section:checked {
+    background-color: gray;
+}
+
+QTableWidget::item {
+    border-bottom: 1px solid gray;
+    padding: 2px;
+}
+
+QTableWidget::item:selected {
+    background-color: darkgray;
+    color: white;
+}
+
 

@@ -26,6 +26,7 @@ class PositiveDoubleValidator(QDoubleValidator):
 
 class Comunicacion(QObject):
     salidas_actualizada = pyqtSignal(list)
+    tipo_red = pyqtSignal(str)
 
 class Window(QMainWindow):
     
@@ -36,7 +37,7 @@ class Window(QMainWindow):
         self.ventana_principal = ventana_principal
         self.comunicacion = Comunicacion()
         self.comunicacion.salidas_actualizada.connect(self.ventana_principal.vista_secundaria.actualizar_salidas)
-        
+        self.comunicacion.tipo_red.connect(self.ventana_principal.vista_secundaria.actualizar_tipo_red)
         self.initUI()
         
     def initUI(self):
@@ -155,6 +156,7 @@ class Window(QMainWindow):
 
     def dropbox_change_tipo_red(self, index):
         self.tipo_red = self.combo_tipo_red.itemText(index)
+        self.comunicacion.tipo_red.emit(self.tipo_red)
         self.disable_buttons_train_and_simulate()
     
     def textbox_iterations(self):
@@ -378,6 +380,8 @@ class Window(QMainWindow):
             self.group_box_layout.itemAt(1).widget().setText(f"Entradas: {entradas_total}")
             self.group_box_layout.itemAt(2).widget().setText(f"Salidas: {salidas_total}")
             self.button_iniciar_red.setEnabled(True)
+            self.button_entrenar.setEnabled(False)
+            self.button_simular.setEnabled(False)
             
 class VentanaPrincipal(QWidget):
     def __init__(self):
