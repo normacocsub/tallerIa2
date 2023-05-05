@@ -26,6 +26,7 @@ class PositiveDoubleValidator(QDoubleValidator):
 
 class Comunicacion(QObject):
     salidas_actualizada = pyqtSignal(list)
+    entradas = pyqtSignal(list)
     tipo_red = pyqtSignal(str)
 
 class Window(QMainWindow):
@@ -38,6 +39,7 @@ class Window(QMainWindow):
         self.comunicacion = Comunicacion()
         self.comunicacion.salidas_actualizada.connect(self.ventana_principal.vista_secundaria.actualizar_salidas)
         self.comunicacion.tipo_red.connect(self.ventana_principal.vista_secundaria.actualizar_tipo_red)
+        self.comunicacion.entradas.connect(self.ventana_principal.vista_secundaria.actualizar_entradas)
         self.initUI()
         
     def initUI(self):
@@ -144,7 +146,7 @@ class Window(QMainWindow):
         vbox.addLayout(hbox)
 
         central_widget.setLayout(vbox)
-        central_widget.setGeometry(80, 200, 250, 200)
+        central_widget.setGeometry(80, 250, 250, 40)
     
 
     def disable_buttons_train_and_simulate(self):
@@ -178,9 +180,11 @@ class Window(QMainWindow):
         hbox.addWidget(text_box)
         vbox.addLayout(hbox)
         widget.setLayout(vbox)
-        widget.setGeometry(420, 200, 250, 200)
+        widget.setGeometry(420, 250, 250, 40)
     
     def textbox_change_iterations(self, text):
+        if text == '':
+            self.iterations = 0
         self.iterations = int(text)
         self.disable_buttons_train_and_simulate()
 
@@ -203,9 +207,11 @@ class Window(QMainWindow):
         hbox.addWidget(text_box)
         vbox.addLayout(hbox)
         widget.setLayout(vbox)
-        widget.setGeometry(65, 300, 265, 200)
+        widget.setGeometry(65, 370, 300, 40)
     
     def textbox_change_max_error(self, text):
+        if text == '':
+            self.max_error = 0
         self.max_error = float(text)
         self.disable_buttons_train_and_simulate()
     
@@ -228,9 +234,11 @@ class Window(QMainWindow):
         hbox.addWidget(text_box)
         vbox.addLayout(hbox)
         widget.setLayout(vbox)
-        widget.setGeometry(383, 300, 285, 200)
+        widget.setGeometry(383, 370, 300, 40)
 
     def texbox_change_rata_aprendizaje(self, text):
+        if text == '':
+            self.rata_aprendizaje = 0
         self.rata_aprendizaje = float(text)
         self.disable_buttons_train_and_simulate()
        
@@ -278,7 +286,7 @@ class Window(QMainWindow):
         line.setFrameShape(QFrame.HLine)
         line.setFrameShadow(QFrame.Sunken)  # Establecer la forma de la línea como horizontal
         vbox.addWidget(line)
-        widget.setGeometry(0, 120 if val == 1 else 350, 800, 205)
+        widget.setGeometry(0, 190 if val == 1 else 420, 800, 40)
 
 
     def iniciar_red(self):
@@ -336,6 +344,7 @@ class Window(QMainWindow):
                 self.salidas_matriz_signal = self.matriz_salidas
                 # Emitir la señal pesos_actualizados con los nuevos pesos
                 self.comunicacion.salidas_actualizada.emit(self.salidas_matriz_signal.tolist())
+                self.comunicacion.entradas.emit(self.matriz_entradas.tolist())
                 self.button_simular.setEnabled(True)
                 break
     def on_button_file_click(self):
@@ -357,11 +366,11 @@ class Window(QMainWindow):
             s1_index = header_vector.index('s1')
 
             # Convierte las filas restantes en una matriz
-            matrix_entrada = [[int(x) for x in row[0:s1_index]] for row in data]
+            matrix_entrada = [[float(x) for x in row[0:s1_index]] for row in data]
             matrix_entrada_np = np.array(matrix_entrada)
             num_filas, entradas_total = matrix_entrada_np.shape
 
-            matrix_salida = [[int(x) for x in row[s1_index:]] for row in data]
+            matrix_salida = [[float(x) for x in row[s1_index:]] for row in data]
             matrix_salida_np = np.array(matrix_salida)
             num_filas, salidas_total = matrix_salida_np.shape
 

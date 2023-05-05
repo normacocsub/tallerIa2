@@ -22,12 +22,15 @@ class Simulation(QWidget):
         self.parent.tipo_red = "Perceptron"
         self.total_patrones = 0
         self.total_entradas = 0
+        self.entradas_vector = []
+        self.salidas_vector = []
         self.patrones = []
         self.pesos = []
         self.umbrales = []
         self.isActivePesos = False
         self.isActiveUmbral = False
         self.isActivePatrones = False
+        self.salidas_red = []
         
         # Crear un diseño vertical para la vista secundaria
         layout = QVBoxLayout()
@@ -50,7 +53,7 @@ class Simulation(QWidget):
     
     def grafica_entrenamiento(self):
         ruta_figura = os.path.abspath("temp-plot2.html")
-        fig = go.Figure(data=[go.Scatter(x=['A', 'B', 'C'], y=[1,2,3])])
+        fig = go.Figure(data=[go.Scatter(x=[], y=[])])
         fig_html = pio.to_html(fig, full_html=False)
         graph_widget = QWebEngineView()
         profile = QWebEngineProfile.defaultProfile()
@@ -71,6 +74,21 @@ class Simulation(QWidget):
         
         graph_widget.load(QUrl.fromLocalFile(ruta_figura))
         self.graph_widget = graph_widget
+    def update_grafica_entrenamiento(self):
+        x_grafic = list(range(1, len(self.entradas_vector)+1))
+        x2_grafic = list(range(1, self.total_entradas+1))
+        fig = go.Figure(data=[go.Scatter(x=x_grafic, y=self.salidas_vector)])
+        fig.add_trace(go.Scatter(x=x2_grafic, y=self.salidas_red))
+
+        fig_html = pio.to_html(fig, full_html=False)
+
+        # Guardar HTML en archivo temporal
+        ruta_figura = os.path.abspath("temp-plot2.html")
+        with open(ruta_figura, 'w', encoding='utf-8') as f:
+            f.write(fig_html)
+
+        # Cargar HTML en la instancia de QWebEngineView
+        self.graph_widget.load(QUrl.fromLocalFile(ruta_figura))
     
     def file_information(self):
         # Crear un widget contenedor
@@ -172,8 +190,11 @@ class Simulation(QWidget):
                         salida_neurona = 0
                 salidas_neuronas.append(salida_neurona)
             salida =  " ".join(str(x) for x in salidas_neuronas)
+            if patron > 0:
+                self.table_view.setItem(patron, 0, QTableWidgetItem(salida))
             salidas.append(salida)
-        print(salidas)
+            self.salidas_red = salidas
+        self.update_grafica_entrenamiento()
 
     def activate_simulation_button(self):
         if self.isActivePesos and self.isActiveUmbral and self.isActivePatrones:
@@ -195,7 +216,7 @@ class Simulation(QWidget):
             self.total_patrones = num_filas
             self.total_entradas = entradas_total
             self.patrones = matrix_entrada_np
-
+            self.table_view.setRowCount(num_filas + 1)
             self.group_box_layout.itemAt(0).widget().setText(f"Patrones: {num_filas}")
             self.group_box_layout.itemAt(1).widget().setText(f"Entradas: {entradas_total}")
             self.isActivePatrones = True
@@ -205,6 +226,12 @@ class Simulation(QWidget):
     @pyqtSlot(list)
     def actualizar_salidas(self, salidas):
         self.parent.salidas = np.array(salidas)
+        self.salidas_vector = [" ".join(map(str, fila)) for fila in self.parent.salidas]
+        print(self.salidas_vector)
+    @pyqtSlot(list)
+    def actualizar_entradas(self, entradas):
+        self.parent.entradas = np.array(entradas)
+        self.entradas_vector =  [" ".join(map(str, fila)) for fila in self.parent.entradas]
     @pyqtSlot(str)
     def actualizar_tipo_red(self, tipo_red):
         self.parent.tipo_red = tipo_red
