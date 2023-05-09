@@ -156,6 +156,9 @@ class Simulation(QWidget):
             self.button_pesos.setStyleSheet(self.style_green)
             if os.path.exists(filename):
                 pesos = np.loadtxt(filename)
+                if len(pesos.shape) == 1:
+                    filas = len(pesos)
+                    pesos = pesos.reshape((filas, 1))
                 self.pesos = pesos
                 self.isActivePesos = True
                 self.activate_simulation_button()
@@ -165,7 +168,7 @@ class Simulation(QWidget):
         if filename:
             self.button_umbrales.setStyleSheet(self.style_green)
             if os.path.exists(filename):
-                umbrales = np.loadtxt(filename)
+                umbrales = np.atleast_1d(np.loadtxt(filename))
                 self.umbrales = umbrales
                 self.isActiveUmbral = True
                 self.activate_simulation_button()
@@ -175,8 +178,6 @@ class Simulation(QWidget):
         salidas = []
         for patron in range(self.total_patrones):
             salidas_neuronas = []
-            errores = []
-            error_permitido = 0
             for i in range(salidas_total):
                 suma_entrada_pesos = 0
                 # iteramos cada elemento del patron
@@ -190,8 +191,7 @@ class Simulation(QWidget):
                         salida_neurona = 0
                 salidas_neuronas.append(salida_neurona)
             salida =  " ".join(str(x) for x in salidas_neuronas)
-            if patron > 0:
-                self.table_view.setItem(patron, 0, QTableWidgetItem(salida))
+            self.table_view.setItem((patron + 1), 0, QTableWidgetItem(salida))
             salidas.append(salida)
             self.salidas_red = salidas
         self.update_grafica_entrenamiento()
@@ -209,7 +209,7 @@ class Simulation(QWidget):
             lines = [l.strip().split(';') for l in lines]
             data = lines[1:]
 
-            matrix_entrada = [[int(x) for x in row[0:]] for row in data]
+            matrix_entrada = [[float(x) for x in row[0:]] for row in data]
             matrix_entrada_np = np.array(matrix_entrada)
             
             num_filas, entradas_total = matrix_entrada_np.shape

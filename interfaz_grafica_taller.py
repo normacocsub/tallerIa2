@@ -146,7 +146,7 @@ class Window(QMainWindow):
         vbox.addLayout(hbox)
 
         central_widget.setLayout(vbox)
-        central_widget.setGeometry(80, 250, 250, 40)
+        central_widget.setGeometry(80, 250, 250, 42)
     
 
     def disable_buttons_train_and_simulate(self):
@@ -180,7 +180,7 @@ class Window(QMainWindow):
         hbox.addWidget(text_box)
         vbox.addLayout(hbox)
         widget.setLayout(vbox)
-        widget.setGeometry(420, 250, 250, 40)
+        widget.setGeometry(420, 250, 250, 42)
     
     def textbox_change_iterations(self, text):
         if text == '':
@@ -207,7 +207,7 @@ class Window(QMainWindow):
         hbox.addWidget(text_box)
         vbox.addLayout(hbox)
         widget.setLayout(vbox)
-        widget.setGeometry(65, 370, 300, 40)
+        widget.setGeometry(65, 370, 300, 42)
     
     def textbox_change_max_error(self, text):
         if text == '':
@@ -234,7 +234,7 @@ class Window(QMainWindow):
         hbox.addWidget(text_box)
         vbox.addLayout(hbox)
         widget.setLayout(vbox)
-        widget.setGeometry(383, 370, 300, 40)
+        widget.setGeometry(383, 370, 300, 42)
 
     def texbox_change_rata_aprendizaje(self, text):
         if text == '':
@@ -322,17 +322,18 @@ class Window(QMainWindow):
                     #calculamos el error 
                     error = self.matriz_salidas[patron][i] - salidas_neuronas[i]
                     errores.append(error)
-                    #iteramos nuevamente las entradas para ajustar los pesos
-                    for j in range(self.total_entradas):
-                        self.pesos[j][i] = self.pesos[j][i] + (self.rata_aprendizaje * error * self.matriz_entradas[patron][j])
-                    #ajustamos los umbrales
-                    self.umbrales[i] = self.umbrales[i] + (self.rata_aprendizaje * error * self.matriz_salidas[patron][i])
-                    #calculamos el error permitido
                     error_permitido += error
+                # ajustamos umbrales y pesos
+                for i in range(self.total_salidas):
+                    for j in range(self.total_entradas):
+                        self.pesos[j][i] = self.pesos[j][i] + (self.rata_aprendizaje * errores[i] * self.matriz_entradas[patron][j])
+                    self.umbrales[i] = self.umbrales[i] + (self.rata_aprendizaje * errores[i] * self.matriz_salidas[patron][i])
                 #sumamos los errores permitidos por cada patron de la iteracion
                 errores_permitidos += (abs(error_permitido) / self.total_salidas)
             #validamos el si el error permitido es menor al error maximo para ver si concluimos el entrenamiento.
             error_iteracion = (errores_permitidos / self.total_patrones)
+            if self.tipo_red == "Adaline":
+                error_iteracion = (errores_permitidos / (2 * self.total_patrones))
             self.error_iteration.append(error_iteracion)
             x_grafic = list(range(1, len(self.error_iteration)+1))
             self.update_grafica_entrenamiento(x_grafic)
@@ -381,7 +382,7 @@ class Window(QMainWindow):
             self.matriz_entradas = matrix_entrada_np
             self.matriz_salidas= matrix_salida_np
 
-            self.pesos = np.random.uniform(-1, 1, size=(entradas_total, salidas_total))
+            self.pesos = np.random.uniform(-1, 1, size=(entradas_total, salidas_total)).reshape(entradas_total, salidas_total)
             self.umbrales = np.random.uniform(-1, 1, size=(salidas_total))
 
             #actualizamos labels
