@@ -429,8 +429,6 @@ if __name__ == '__main__':
         stylesheet = f.read()
         app.setStyleSheet(stylesheet)
     window = VentanaPrincipal()
-    print("Ventana creada")
-    print(window.size())
     sys.exit(app.exec_())
 
 

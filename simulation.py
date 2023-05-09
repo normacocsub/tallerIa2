@@ -8,12 +8,12 @@ from PyQt5.QtWebEngineWidgets import QWebEngineView, QWebEngineProfile
 
 
 class Simulation(QWidget):
-    def __init__(self, parent):
-        super().__init__(parent)
+    def __init__(self, parent ):
+        super().__init__(parent )
         self.parent = parent
 
         titulo_style = """
-            color: white;
+            color: black;
             font-family: Arial;
             font-size: 24px;
             font-weight: bold;
@@ -112,6 +112,14 @@ class Simulation(QWidget):
         widget.setGeometry(90, 180, 200, 150)
 
     def buttons_file(self):
+
+        button = QPushButton('Regresar', self)
+        button.setToolTip('This is a button')
+        button.setStyleSheet('QPushButton { border: 1px solid black; background-color: blue; color: white; font-size: 14px; font-weight: bold; max-width: 40px;  }')
+        button.move(20, 10)
+        button.clicked.connect(self.regresar)
+        self.button_pesos = button
+
         button = QPushButton('Cargar pesos', self)
         button.setToolTip('This is a button')
         button.move(100, 90)
@@ -200,6 +208,8 @@ class Simulation(QWidget):
         if self.isActivePesos and self.isActiveUmbral and self.isActivePatrones:
             self.button_simular.setVisible(True)
             self.button_simular.setEnabled(True)
+    def regresar(self):
+        self.parent.stacked_widget.setCurrentIndex(0)
     def cargar_patrones(self):
         filename, _ = QFileDialog.getOpenFileName(None, "Seleccionar archivo", ".", "Archivos TXT (*.txt);;Archivos CSV (*.csv)")
         if filename:
